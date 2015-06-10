@@ -109,19 +109,19 @@ if len(sys.argv) < 3:
     printhelp()
     sys.exit(2)
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "hei:o:", ["ifile=", "ofile=", "encoding"])
+    opts, args = getopt.getopt(sys.argv[1:], "hi:o:e:", ["ifile=", "ofile=", "encoding="])
 except getopt.GetoptError:
     printhelp()
     sys.exit(2)
 for opt, arg in opts:
     if opt == '-h':
-        printhelp()        
-    elif opt in ("-e", "--encoding"):
-        encoding = arg
+        printhelp()
     elif opt in ("-i", "--ifile"):
         ifile = arg
     elif opt in ("-o", "--ofile"):
         ofile = arg
+    elif opt in ("-e", "--encoding"):
+        encoding = arg
 print('Parsing %s encoded as %s into %s' % (ifile, encoding, ofile))  
 parse(ifile, ofile, encoding)
 
