@@ -48,6 +48,7 @@ def parsePart(data):
         translation = translation.replace('III','')
         transltaion = translation.replace('II','')
         transltaion = translation.replace('c ','')
+        translation = translation.replace(' attr','')
         part = (word, translation)
         if word.count(' ') == len(word) or translation.count(' ') == len(translation):
             part = None
