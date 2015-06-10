@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import re, sqlite3
+import re, sys, getopt
 
 def checkPart(buffer, newLine):
     temp = buffer + newLine
@@ -71,29 +71,58 @@ def parsePart(data):
         print("NONE: " + data)
     return part
 
-print('START')
-id = 0
-buffer = ["",""]
-with open('kre-ru-en.txt', 'r', encoding='cp1251') as fo:
-#with open('kre-ru-en-tst.txt', 'r', encoding='utf-8') as fo:
-    with open('re.txt', 'w', encoding='utf-8') as fw:
-        for line in fo:
-            if not checkPart(buffer[id], line):
-                buffer[id] += line
-            else:
-                newID = (id + 1) % 2
-                buffer[newID] = ""
-                buffer[newID] += line                
-                result = parsePart(buffer[id])                
-                if result is not None and len(result) > 1:
-                    (w, t) = result
-                    fw.write(w + ' : ' + t + '\n')
-                buffer[id] = ""
-                id = newID
-        result = parsePart(buffer[id])
-        if result is not None and len(result) > 1:
-            (w, t) = result
-            fw.write(w + ' : ' + t + '\n')
-fw.close()
-fo.close()
-print('END')
+def parse(fileNameToParse, outFileName, enc):
+    id = 0
+    buffer = ["",""]
+    with open(fileNameToParse, 'r', encoding=enc) as fo:
+    #with open('kre-ru-en-tst.txt', 'r', encoding='utf-8') as fo:
+        with open(outFileName, 'w', encoding='utf-8') as fw:
+            for line in fo:
+                if not checkPart(buffer[id], line):
+                    buffer[id] += line
+                else:
+                    newID = (id + 1) % 2
+                    buffer[newID] = ""
+                    buffer[newID] += line                
+                    result = parsePart(buffer[id])                
+                    if result is not None and len(result) > 1:
+                        (w, t) = result
+                        fw.write(w + ' : ' + t + '\n')
+                    buffer[id] = ""
+                    id = newID
+            result = parsePart(buffer[id])
+            if result is not None and len(result) > 1:
+                (w, t) = result
+                fw.write(w + ' : ' + t + '\n')
+    fw.close()
+    fo.close()
+
+def printhelp():
+    print('Usage:');
+    print('parse.py -i <inputfile> -o <outputfile> [-e <encoding>]')
+    print('note: default input encoding is utf-8')
+
+encoding = 'utf-8'
+ifile = ''
+ofile = ''
+if len(sys.argv) < 3:
+    printhelp()
+    sys.exit(2)
+try:
+    opts, args = getopt.getopt(sys.argv[1:], "hei:o:", ["ifile=", "ofile=", "encoding"])
+except getopt.GetoptError:
+    printhelp()
+    sys.exit(2)
+for opt, arg in opts:
+    if opt == '-h':
+        printhelp()        
+    elif opt in ("-e", "--encoding"):
+        encoding = arg
+    elif opt in ("-i", "--ifile"):
+        ifile = arg
+    elif opt in ("-o", "--ofile"):
+        ofile = arg
+print('Parsing %s encoded as %s into %s' % (ifile, encoding, ofile))  
+parse(ifile, ofile, encoding)
+
+
