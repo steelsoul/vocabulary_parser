@@ -10,37 +10,31 @@ def parseLine(line):
     #print('pos = %d, a = %s, b = %s' % (pos, apart, bpart))
     return (apart, bpart)
 
+def makeDB(filename, conn):
+    with open(filename, 'r') as fr:
+        sentence = ''
+        for line in fr:
+            if ';' not in line: 
+                sentence += line[:-1]
+                sentence += ' '
+            else:
+                sentence += line[:-1]
+                print("Executing: %s" % sentence)
+                conn.execute(sentence)
+                sentence = ''
+
 def parseFile(fileName, dbName):
-    langTable = '''CREATE TABLE LANGUAGES
-    (_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    LANGUAGE TEXT);'''
-    presTable = '''CREATE TABLE PRESENTATION
-    (pid INTEGER PRIMARY KEY AUTOINCREMENT,
-    WORD_ID INT,
-    TRANSLATION_ID INT);'''
-    wordTable = '''CREATE TABLE WORDSTABLE
-    (wid INTEGER PRIMARY KEY AUTOINCREMENT,
-    LANG_ID INT,
-    TYPE_ID INT,
-    WORD_DATA TEXT);'''
-
     conn = sqlite3.connect(dbName)
-    conn.execute(langTable)
-    conn.execute(presTable)
-    conn.execute(wordTable)
-
-    conn.execute("INSERT INTO LANGUAGES (LANGUAGE) VALUES ('en')")
-    conn.execute("INSERT INTO LANGUAGES (LANGUAGE) VALUES ('ru')")
-    conn.execute("INSERT INTO LANGUAGES (LANGUAGE) VALUES ('de')")
-    
+    makeDB('createBD.sql', conn)
+   
     with open(fileName, 'r', encoding='utf-8') as fr:
         for line in fr:
             result = parseLine(line)
             if result is not None:
                 (word, translation) = result
-                first = "INSERT INTO WORDSTABLE (LANG_ID, TYPE_ID, WORD_DATA) \
+                first = "INSERT INTO WORDSTABLE (ID_LANG, ID_TYPE, WORD_DATA) \
     VALUES (2, 0, '%s')" % (word)
-                second = "INSERT INTO WORDSTABLE (LANG_ID, TYPE_ID, WORD_DATA) \
+                second = "INSERT INTO WORDSTABLE (ID_LANG, ID_TYPE, WORD_DATA) \
     VALUES (1, 0, '%s')" % (translation)
                 #print(first)
                 #print(second)
@@ -49,9 +43,6 @@ def parseFile(fileName, dbName):
     conn.commit()
     conn.close()
 
-dbFileName = 'temp'
-importFileName = 'test.txt'
+dbFileName = 'temp.db'
+importFileName = 'res.txt'
 parseFile(importFileName, dbFileName)
-
-
-                
