@@ -94,7 +94,7 @@ def parse(fileNameToParse, outFileName, enc):
             result = parsePart(buffer[id])
             if result is not None and len(result) > 1:
                 (w, t) = result
-                fw.write(w + ' : ' + t + '\n')
+                fw.write(w.rstrip() + ' : ' + t.rstrip() + '\n')
     fw.close()
     fo.close()
 
