@@ -44,7 +44,13 @@ def parseFile(fileName, dbName):
     makeDB('createBD.sql', conn)
    
     with open(fileName, 'r', encoding='utf-8') as fr:
+        count = 0
         for line in fr:
+            count = count + 1
+            if count == 100: 
+                sys.stdout.write('.')
+                sys.stdout.flush()
+                count = 0
             result = parseLine(line)
             if result is not None:
                 (word, translation) = result
@@ -80,20 +86,20 @@ def parseFile(fileName, dbName):
                     if pos is None:
                         print("Unrecoverable error (1)!")
                         sys.exit(2)
-                    print("word %s is known at %d" % (word, pos))
+                    #print("word %s is known at %d" % (word, pos))
                     id_word = pos
                 elif res2 == False:
                     pos = findPosition(c, "WORDSTABLE", "WORD_DATA", translation)
                     if pos is None:
                         print("Unrecoverable error(2)!")
                         sys.exit(2)
-                    print("word %s is known at %d" % (translation, pos))
+                    #print("word %s is known at %d" % (translation, pos))
                     id_transl = pos
                 presQuery = "INSERT INTO PRESENTATION (ID_DIRECT, ID_WORD, ID_TRANSL) \
  VALUES (%d, %d, %d)" % (id_direct, id_word, id_transl)
 #                print(presQuery)  
                 c.execute(presQuery)
-                    
+    print('')                
     conn.commit()
     conn.close()
 
@@ -122,3 +128,4 @@ if __name__ == "__main__":
 
     print("Parsing %s to %s" % (importFileName, dbFileName))
     parseFile(importFileName, dbFileName)
+    print("Complete.")
