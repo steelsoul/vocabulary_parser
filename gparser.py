@@ -92,9 +92,9 @@ def parse(start_symbol, text, grammar):
                 if rem is not None: return [atom]+tree, rem
             return Fail
         else:  # Terminal: match characters against start of text
-            #print("D: |%s|%s|" % (atom, text))
+            print("D: |%s|%s|" % (atom, text))
             m = re.match(tokenizer % atom, text, re.UNICODE | re.MULTILINE)
-            #if m: print("E: |%s|%s|" % (m.group(1), text[m.end():]))
+            if m: print("E: |%s|%s|" % (m.group(1), text[m.end():]))
             return Fail if (not m) else (m.group(1), text[m.end():])
 
     return parse_atom(start_symbol, text)
@@ -195,12 +195,14 @@ def verify(G):
     show('Orphans ', lhstokens-rhstokens)
 
 RUEN = grammar("""
-ru_word => gramtype description
-gramtype => (м.)?
+ru_word => gramtype qualword description
+gramtype => (м.)? | (ж.)?
+qualword => (мед.)?
 description => digit translation additional | digit translation | translation
 digit => ([0-9].)?
-en_word => \w*-\w* | \w*
-translation => en_word separator | en_word comma | en_word end
+en_words => en_word \s en_words | en_word
+en_word => \w*-\w*-\w* | \w*-\w* | \w*
+translation => en_words separator | en_words comma | en_words end | en_words end
 comma => [,]
 separator => [;]
 end => [.]
@@ -213,16 +215,19 @@ meaning => \w+
 if __name__ == '__main__':
     # print(G)
 #    verify(G)
-    verify(RUEN)
-    print(parse('Exp', '3*x + b', G))
+#    verify(RUEN)
+#    print(parse('Exp', '3*x + b', G))
     #text =  'м. 1.  box; (упаковочный) packing-case;'
     text =  '''м. 1.  box; (упаковочный)  packing-case; почтовый ~ 
 letter-box, pillar-box;''' 
-    print("Text: %s" % text)
+    print("==== Text: %s" % text)
     #t1 = text[0:2]
     #print("T1: |%s|"% t1)
     print(parse('ru_word', text, RUEN))
-    
+
+    text = '''м. мед. foot-and-mouth disease.'''
+    print("==== Text: %s" % text)
+    print(parse('ru_word', text, RUEN))
     # print(URL)
     # verify(URL)
     # print(parse('url', 'http://www.w3.org/Addressing/URL/5_BNF.html', URL))
