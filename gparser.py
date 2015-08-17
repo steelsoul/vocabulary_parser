@@ -92,9 +92,9 @@ def parse(start_symbol, text, grammar):
                 if rem is not None: return [atom]+tree, rem
             return Fail
         else:  # Terminal: match characters against start of text
-            print("D: |%s|%s|" % (atom, text))
+            #print("D: |%s|%s|" % (atom, text))
             m = re.match(tokenizer % atom, text, re.UNICODE | re.MULTILINE)
-            if m: print("E: |%s|%s|" % (m.group(1), text[m.end():]))
+            #if m: print("E: |%s|%s|" % (m.group(1), text[m.end():]))
             return Fail if (not m) else (m.group(1), text[m.end():])
 
     return parse_atom(start_symbol, text)
@@ -195,39 +195,55 @@ def verify(G):
     show('Orphans ', lhstokens-rhstokens)
 
 RUEN = grammar("""
-ru_word => gramtype qualword description
-gramtype => (м.)? | (ж.)?
-qualword => (мед.)?
-description => digit translation additional | digit translation | translation
+ru_word => plural gramtype qualword descriptions
+gramtype => (м\.)? | (ж\.)?
+qualword => (мед\.)?
+plural => (мн\.)?
+descriptions => digit additionals | description descriptions | description
+description => digit translation additionals | digit translation | translation
 digit => ([0-9].)?
-en_words => en_word \s en_words | en_word
-en_word => \w*-\w*-\w* | \w*-\w* | \w*
-translation => en_words separator | en_words comma | en_words end | en_words end
+en_words => en_word en_surrogate en_words | en_word \s en_words | en_word
+en_word => en_letters
+en_letters => ([a-zA-Z\-'`]*)
+translation => en_words separator | en_words comma | en_words end
 comma => [,]
 separator => [;]
 end => [.]
-translations => en_word comma translations | en_word separator
+translations => en_words comma translations | en_words separator | en_words end | end_words
+additionals => additional separator additionals | additional surrogate translations | surrogate translations | additional
 additional => [(] meaning [)] translation surrogate translations | [(] meaning [)] translation
-surrogate => meaning [~]
-meaning => \w+
+surrogate => [~] meaning | meaning [~]
+meaning => ru_letters
+ru_letters => ([а-яА-Яё\-\s]*)
+en_surrogate => en_word\* | \*
 """)
 
 if __name__ == '__main__':
-    # print(G)
 #    verify(G)
 #    verify(RUEN)
-#    print(parse('Exp', '3*x + b', G))
-    #text =  'м. 1.  box; (упаковочный) packing-case;'
     text =  '''м. 1.  box; (упаковочный)  packing-case; почтовый ~ 
-letter-box, pillar-box;''' 
+letter-box, pillar-box; 2. (выдвижной) drawer; чёрный ~ black box; откладывать в долгий ~ shelve, put* off.''' 
     print("==== Text: %s" % text)
-    #t1 = text[0:2]
-    #print("T1: |%s|"% t1)
     print(parse('ru_word', text, RUEN))
 
     text = '''м. мед. foot-and-mouth disease.'''
     print("==== Text: %s" % text)
     print(parse('ru_word', text, RUEN))
-    # print(URL)
-    # verify(URL)
-    # print(parse('url', 'http://www.w3.org/Addressing/URL/5_BNF.html', URL))
+    
+    text = '''мн. feast sg , viands, victuals. '''
+    print("==== Text: %s" % text)
+    print(parse('ru_word', text, RUEN))
+    
+    text = '''м. hawk; следить как ~ watch like a hawk. '''
+    print("==== Text: %s" % text)
+    print(parse('ru_word', text, RUEN))
+    
+    text = '''1. hawk`s; hawk attr. ; 2. (как у ястреба) hawklike; ~ взгляд   piercing glance; ~ нос hawk nose.  '''
+    print("==== Text: %s" % text)
+    print(parse('ru_word', text, RUEN))
+
+### Stood here.    
+    text = '''ж. 1.  cell; 2. воен. foxhole.'''
+    print("==== Text: %s" % text)
+    print(parse('ru_word', text, RUEN))
+
