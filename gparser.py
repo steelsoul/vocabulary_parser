@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 
 #
-#   Use python 3 for run this !! 
+#   Use python 3 for running this !! 
 #
 
 import functools
 import re
+
+DEBUG = False
 
 def grammar(description, whitespace = r'\s*'):
     """
@@ -74,6 +76,7 @@ def parse(start_symbol, text, grammar):
 
     @memo
     def parse_atom(atom, text):
+        global DEBUG
         """
         Parameters:
         atom : either a key in grammar or a regular expression
@@ -92,9 +95,11 @@ def parse(start_symbol, text, grammar):
                 if rem is not None: return [atom]+tree, rem
             return Fail
         else:  # Terminal: match characters against start of text
-            #print("D: |%s|%s|" % (atom, text))
+            if DEBUG: 
+                print("D: |%s|%s|" % (atom, text))
             m = re.match(tokenizer % atom, text, re.UNICODE | re.MULTILINE)
-            #if m: print("E: |%s|%s|" % (m.group(1), text[m.end():]))
+            if DEBUG:
+                if m: print("E: |%s|%s|" % (m.group(1), text[m.end():]))
             return Fail if (not m) else (m.group(1), text[m.end():])
 
     return parse_atom(start_symbol, text)
@@ -194,56 +199,92 @@ def verify(G):
     show('Suspects', [t for t in (rhstokens-lhstokens) if t.isalnum()])
     show('Orphans ', lhstokens-rhstokens)
 
+def check_result(res):
+    if res == None: return False
+    for x in range(len(res)):
+        if res[x] != ' ': return False
+    return True
+
+
 RUEN = grammar("""
-ru_word => plural gramtype qualword descriptions
-gramtype => (м\.)? | (ж\.)?
+ru_word => plural gramtype_male gramtype_female oldest qualword descriptions
+gramtype_male => (м\.)?
+gramtype_female => (ж\.)?
 qualword => (мед\.)?
 plural => (мн\.)?
-descriptions => digit additionals | description descriptions | description
-description => digit translation additionals | digit translation | translation
-digit => ([0-9].)?
+military => (воен\.)?
+oldest => (уст\.)?
+descriptions =>  description descriptions | description
+description => digit translation additionals | digit additionals | digit translation | translation
+digit => ([0-9].)? military | ([0-9].)?
 en_words => en_word en_surrogate en_words | en_word \s en_words | en_word
 en_word => en_letters
-en_letters => ([a-zA-Z\-'`]*)
+en_letters => ([a-zA-Z\-'`\(\)0-9]*)
 translation => en_words separator | en_words comma | en_words end
 comma => [,]
 separator => [;]
 end => [.]
 translations => en_words comma translations | en_words separator | en_words end | end_words
-additionals => additional separator additionals | additional surrogate translations | surrogate translations | additional
-additional => [(] meaning [)] translation surrogate translations | [(] meaning [)] translation
-surrogate => [~] meaning | meaning [~]
+additionals => additional surogate translations additionals | additional separator additionals | additional surrogate translations | surrogate translations | additional
+additional => [(] meaning [)] translation surrogate translations | [(] meaning [)] translation | surrogate translation
+surrogate => meaning [~] meaning | [~] meaning | meaning [~]
 meaning => ru_letters
 ru_letters => ([а-яА-Яё\-\s]*)
 en_surrogate => en_word\* | \*
 """)
+
+def do_test(text):
+    print("==== Text: %s" % text)
+    result = parse('ru_word', text, RUEN)
+    assert(check_result(result[-1]))
+    print(result)
 
 if __name__ == '__main__':
 #    verify(G)
 #    verify(RUEN)
     text =  '''м. 1.  box; (упаковочный)  packing-case; почтовый ~ 
 letter-box, pillar-box; 2. (выдвижной) drawer; чёрный ~ black box; откладывать в долгий ~ shelve, put* off.''' 
-    print("==== Text: %s" % text)
-    print(parse('ru_word', text, RUEN))
+    do_test(text)
 
     text = '''м. мед. foot-and-mouth disease.'''
-    print("==== Text: %s" % text)
-    print(parse('ru_word', text, RUEN))
+    do_test(text)   
     
     text = '''мн. feast sg , viands, victuals. '''
-    print("==== Text: %s" % text)
-    print(parse('ru_word', text, RUEN))
+    do_test(text)
     
     text = '''м. hawk; следить как ~ watch like a hawk. '''
-    print("==== Text: %s" % text)
-    print(parse('ru_word', text, RUEN))
+    do_test(text)
     
     text = '''1. hawk`s; hawk attr. ; 2. (как у ястреба) hawklike; ~ взгляд   piercing glance; ~ нос hawk nose.  '''
-    print("==== Text: %s" % text)
-    print(parse('ru_word', text, RUEN))
+    do_test(text)
 
-### Stood here.    
     text = '''ж. 1.  cell; 2. воен. foxhole.'''
-    print("==== Text: %s" % text)
-    print(parse('ru_word', text, RUEN))
+    do_test(text)
 
+    text = '''barley attr. ; ~ое зерно grain of barley, barley-corn; 
+~ая крупа barley; ~ая каша barley-milk. '''
+    do_test(text)
+    
+    text = '''м. (на глазу) sty.'''
+    do_test(text)
+    
+    text = '''м. (злак) barley. '''
+    do_test(text)
+    
+    text = '''м. уст. 1.  (рубин) ruby; 2. (сапфир) sapphire.'''
+    do_test(text)
+    
+    text = '''м. yat (name of old Russian letter replaced by in 1918) ;
+на ~ разг. first class, splendid(ly). '''
+    do_test(text)
+    
+    text = '''ж. adventure; (рискованное дело тж.) hazardous affair, 
+gamble, venture; разг. shady enterprise; военная ~ military 
+adventure/gamble; ~изм м. adventurism; ~ист м. adventurer; ~истка 
+ж. adventuress; ~ный 1. (рискованный) risky, hazardous;   
+(неблаговидный) shady, doubtful; 2. (приключенческий) adventure 
+attr. ; ~ный   роман novel of adventure; (литературный   жанр) 
+picaresque novel.'''
+    print("==== Text: %s" % text)
+    result = parse('ru_word', text, RUEN)
+    print(result)
